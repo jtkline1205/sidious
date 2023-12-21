@@ -9,30 +9,38 @@ import (
 )
 
 type Rank struct {
-	ID             string `json:"id"`
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
+	BaccaratValue  uint8  `json:"baccaratValue"`
 }
 
 var ranks []Rank
-
-// var rank = "Spades"
-
-// func GetItemsHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	json.NewEncoder(w).Encode(rank)
-// }
 
 func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	// itemID := params["id"]
 	itemName := params["name"]
 
 	for _, item := range ranks {
 		if item.Name == itemName {
 			json.NewEncoder(w).Encode(item.BlackjackValue)
+			return
+		}
+	}
+
+	http.NotFound(w, r)
+}
+
+func GetRankBaccaratValueHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+	itemName := params["name"]
+
+	for _, item := range ranks {
+		if item.Name == itemName {
+			json.NewEncoder(w).Encode(item.BaccaratValue)
 			return
 		}
 	}
@@ -57,22 +65,22 @@ func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	router := mux.NewRouter()
 
-	ranks = append(ranks, Rank{ID: "1", Name: "Ace", BlackjackValue: 11})
-	ranks = append(ranks, Rank{ID: "2", Name: "Two", BlackjackValue: 2})
-	ranks = append(ranks, Rank{ID: "3", Name: "Three", BlackjackValue: 3})
-	ranks = append(ranks, Rank{ID: "4", Name: "Four", BlackjackValue: 4})
-	ranks = append(ranks, Rank{ID: "5", Name: "Five", BlackjackValue: 5})
-	ranks = append(ranks, Rank{ID: "6", Name: "Six", BlackjackValue: 6})
-	ranks = append(ranks, Rank{ID: "7", Name: "Seven", BlackjackValue: 7})
-	ranks = append(ranks, Rank{ID: "8", Name: "Eight", BlackjackValue: 8})
-	ranks = append(ranks, Rank{ID: "9", Name: "Nine", BlackjackValue: 9})
-	ranks = append(ranks, Rank{ID: "10", Name: "Ten", BlackjackValue: 10})
-	ranks = append(ranks, Rank{ID: "11", Name: "Jack", BlackjackValue: 10})
-	ranks = append(ranks, Rank{ID: "12", Name: "Queen", BlackjackValue: 10})
-	ranks = append(ranks, Rank{ID: "13", Name: "King", BlackjackValue: 10})
+	ranks = append(ranks, Rank{Name: "Ace", BlackjackValue: 11, BaccaratValue: 1})
+	ranks = append(ranks, Rank{Name: "Two", BlackjackValue: 2, BaccaratValue: 2})
+	ranks = append(ranks, Rank{Name: "Three", BlackjackValue: 3, BaccaratValue: 3})
+	ranks = append(ranks, Rank{Name: "Four", BlackjackValue: 4, BaccaratValue: 4})
+	ranks = append(ranks, Rank{Name: "Five", BlackjackValue: 5, BaccaratValue: 5})
+	ranks = append(ranks, Rank{Name: "Six", BlackjackValue: 6, BaccaratValue: 6})
+	ranks = append(ranks, Rank{Name: "Seven", BlackjackValue: 7, BaccaratValue: 7})
+	ranks = append(ranks, Rank{Name: "Eight", BlackjackValue: 8, BaccaratValue: 8})
+	ranks = append(ranks, Rank{Name: "Nine", BlackjackValue: 9, BaccaratValue: 9})
+	ranks = append(ranks, Rank{Name: "Ten", BlackjackValue: 10, BaccaratValue: 0})
+	ranks = append(ranks, Rank{Name: "Jack", BlackjackValue: 10, BaccaratValue: 0})
+	ranks = append(ranks, Rank{Name: "Queen", BlackjackValue: 10, BaccaratValue: 0})
+	ranks = append(ranks, Rank{Name: "King", BlackjackValue: 10, BaccaratValue: 0})
 
-	// router.HandleFunc("/rank", GetItemsHandler).Methods("GET")
 	router.HandleFunc("/ranks/{name}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
+	router.HandleFunc("/ranks/{name}/baccaratValue", GetRankBaccaratValueHandler).Methods("GET")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
