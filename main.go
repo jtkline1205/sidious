@@ -22,10 +22,10 @@ func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	itemName := params["name"]
+	itemLabel := params["label"]
 
 	for _, item := range ranks {
-		if item.Name == itemName {
+		if item.Label == itemLabel {
 			json.NewEncoder(w).Encode(item.BlackjackValue)
 			return
 		}
@@ -38,10 +38,10 @@ func GetRankBaccaratValueHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	itemName := params["name"]
+	itemLabel := params["label"]
 
 	for _, item := range ranks {
-		if item.Name == itemName {
+		if item.Label == itemLabel {
 			json.NewEncoder(w).Encode(item.BaccaratValue)
 			return
 		}
@@ -54,10 +54,10 @@ func GetRankLabelHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	itemName := params["name"]
+	itemLabel := params["label"]
 
 	for _, item := range ranks {
-		if item.Name == itemName {
+		if item.Label == itemLabel {
 			json.NewEncoder(w).Encode(item.Label)
 			return
 		}
@@ -70,10 +70,10 @@ func GetRankOrderHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	params := mux.Vars(r)
-	itemName := params["name"]
+	itemLabel := params["label"]
 
 	for _, item := range ranks {
-		if item.Name == itemName {
+		if item.Label == itemLabel {
 			json.NewEncoder(w).Encode(item.Order)
 			return
 		}
@@ -99,10 +99,10 @@ func main() {
 	ranks = append(ranks, Rank{Name: "Queen", BlackjackValue: 10, BaccaratValue: 0, Label: "Q", Order: 12})
 	ranks = append(ranks, Rank{Name: "King", BlackjackValue: 10, BaccaratValue: 0, Label: "K", Order: 13})
 
-	router.HandleFunc("/ranks/{name}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
-	router.HandleFunc("/ranks/{name}/baccaratValue", GetRankBaccaratValueHandler).Methods("GET")
-	router.HandleFunc("/ranks/{name}/label", GetRankLabelHandler).Methods("GET")
-	router.HandleFunc("/ranks/{name}/order", GetRankOrderHandler).Methods("GET")
+	router.HandleFunc("/ranks/{label}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
+	router.HandleFunc("/ranks/{label}/baccaratValue", GetRankBaccaratValueHandler).Methods("GET")
+	router.HandleFunc("/ranks/{label}/label", GetRankLabelHandler).Methods("GET")
+	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
