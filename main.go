@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +21,11 @@ type Rank struct {
 	BaccaratValue  uint8  `json:"baccaratValue"`
 	Label          string `json:"label"`
 	Order          uint8  `json:"order"`
+}
+
+type Suit struct {
+	Name  string `json:"name"`
+	Label string `json:"label"`
 }
 
 type Card struct {
@@ -38,6 +44,7 @@ type Shoe struct {
 // Package Variables
 
 var ranks []Rank
+var suits []Suit
 var SizeToShoeMap = make(map[int]*Shoe)
 var mutex = &sync.Mutex{}
 
@@ -231,6 +238,33 @@ func CardsLeftHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func CardResourceNameHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	queryParams := r.URL.Query()
+
+	rankStr := queryParams.Get("rank")
+	suitStr := queryParams.Get("suit")
+
+	var foundRankName string
+	var foundSuitName string
+
+	for _, item := range ranks {
+		if item.Label == rankStr {
+			foundRankName = item.Name
+		}
+	}
+
+	for _, item := range suits {
+		if item.Label == suitStr {
+			foundSuitName = item.Name
+		}
+	}
+
+	json.NewEncoder(w).Encode(strings.ToLower(foundRankName) + "_" + strings.ToLower(foundSuitName))
+	return
+}
+
 func main() {
 
 	SizeToShoeMap[1] = NewShoe(1)
@@ -254,12 +288,18 @@ func main() {
 	ranks = append(ranks, Rank{Name: "Queen", BlackjackValue: 10, BaccaratValue: 0, Label: "Q", Order: 12})
 	ranks = append(ranks, Rank{Name: "King", BlackjackValue: 10, BaccaratValue: 0, Label: "K", Order: 13})
 
+	suits = append(suits, Suit{Name: "Hearts", Label: "H"})
+	suits = append(suits, Suit{Name: "Spades", Label: "S"})
+	suits = append(suits, Suit{Name: "Diamonds", Label: "D"})
+	suits = append(suits, Suit{Name: "Clubs", Label: "C"})
+
 	router := mux.NewRouter()
 	router.HandleFunc("/ranks/{label}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/baccaratValue", GetRankBaccaratValueHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 	router.HandleFunc("/shoes/{shoeSize}/draw", DrawCardHandler).Methods("GET")
 	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
+	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
