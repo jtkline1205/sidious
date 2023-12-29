@@ -265,15 +265,12 @@ func CardResourceNameHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func main() {
+func init() {
+	println("init running")
+	SetUpRanksAndSuits()
+}
 
-	SizeToShoeMap[1] = NewShoe(1)
-	SizeToShoeMap[2] = NewShoe(2)
-	SizeToShoeMap[4] = NewShoe(4)
-	SizeToShoeMap[8] = NewShoe(8)
-	SizeToShoeMap[9] = NewShoe(9)
-	SizeToShoeMap[10] = NewShoe(10)
-
+func SetUpRanksAndSuits() {
 	ranks = append(ranks, Rank{Name: "Ace", BlackjackValue: 11, BaccaratValue: 1, Label: "A", Order: 1})
 	ranks = append(ranks, Rank{Name: "Two", BlackjackValue: 2, BaccaratValue: 2, Label: "2", Order: 2})
 	ranks = append(ranks, Rank{Name: "Three", BlackjackValue: 3, BaccaratValue: 3, Label: "3", Order: 3})
@@ -292,6 +289,18 @@ func main() {
 	suits = append(suits, Suit{Name: "Spades", Label: "S"})
 	suits = append(suits, Suit{Name: "Diamonds", Label: "D"})
 	suits = append(suits, Suit{Name: "Clubs", Label: "C"})
+}
+
+func main() {
+	println("main running")
+	SetUpRanksAndSuits()
+
+	SizeToShoeMap[1] = NewShoe(1)
+	SizeToShoeMap[2] = NewShoe(2)
+	SizeToShoeMap[4] = NewShoe(4)
+	SizeToShoeMap[8] = NewShoe(8)
+	SizeToShoeMap[9] = NewShoe(9)
+	SizeToShoeMap[10] = NewShoe(10)
 
 	router := mux.NewRouter()
 	router.HandleFunc("/ranks/{label}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
