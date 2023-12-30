@@ -15,6 +15,10 @@ import (
 
 // Structs
 
+type CardsBody struct {
+	Cards []string `json:"cards"`
+}
+
 type Rank struct {
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
@@ -138,6 +142,46 @@ func (s *Shoe) String() string {
 	return result
 }
 
+func getBlackjackValueForCard(card string) int {
+	if len(card) == 2 {
+		for _, item := range ranks {
+			if item.Label[0] == card[0] {
+				return int(item.BlackjackValue)
+			}
+		}
+	} else {
+		for _, item := range ranks {
+			if item.Label == card {
+				return int(item.BlackjackValue)
+			}
+		}
+	}
+
+	return -1
+}
+
+func calculateBlackjackValue(cards []string) int {
+	returnValue := 0
+	for _, card := range cards {
+		returnValue += getBlackjackValueForCard(card)
+	}
+
+	acesAs11s := 0
+	for _, card := range cards {
+		if card[0] == 'A' {
+			acesAs11s++
+		}
+	}
+
+	for i := 0; i < acesAs11s; i++ {
+		if returnValue > 21 {
+			returnValue -= 10
+		}
+	}
+
+	return returnValue
+}
+
 // Handlers
 
 func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -145,15 +189,25 @@ func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	itemLabel := params["label"]
+	blackjackValue := getBlackjackValueForCard(itemLabel)
+	json.NewEncoder(w).Encode(blackjackValue)
+}
 
-	for _, item := range ranks {
-		if item.Label == itemLabel {
-			json.NewEncoder(w).Encode(item.BlackjackValue)
-			return
-		}
+func GetBlackjackValueForCardsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	println("IN THE HANDLER")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		println("sending an error")
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
 	}
+	cards := cardsBody.Cards
 
-	http.NotFound(w, r)
+	blackjackValue := calculateBlackjackValue(cards)
+
+	json.NewEncoder(w).Encode(blackjackValue)
 }
 
 func GetRankBaccaratValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -309,6 +363,7 @@ func main() {
 	router.HandleFunc("/shoes/{shoeSize}/draw", DrawCardHandler).Methods("GET")
 	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
 	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
+	router.HandleFunc("/blackjack/value", GetBlackjackValueForCardsHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
