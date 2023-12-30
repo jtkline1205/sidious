@@ -19,6 +19,10 @@ type CardsBody struct {
 	Cards []string `json:"cards"`
 }
 
+type ValuesBody struct {
+	Values []uint8 `json:"values"`
+}
+
 type Rank struct {
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
@@ -90,7 +94,7 @@ func (d *Deck) HasCards() bool {
 	return len(d.Cards) > 0
 }
 
-func (card Card) String() string {
+func (card *Card) String() string {
 	var result string
 	result += fmt.Sprintf("%s%s", card.RankLabel, card.Suit)
 	return result
@@ -142,7 +146,43 @@ func (s *Shoe) String() string {
 	return result
 }
 
-func getBlackjackValueForCard(card string) int {
+func CalculateIsSoft(cards []string) bool {
+	var value, acesAs11s int
+
+	for _, card := range cards {
+		value += CalculateBlackjackValueForCard(card)
+		if card[0] == 'A' {
+			acesAs11s++
+		}
+	}
+
+	for i := 0; i < acesAs11s; i++ {
+		if value > 21 {
+			value -= 10
+		}
+	}
+
+	return acesAs11s > 0 && value <= 21
+}
+
+func CalculateIsBlackjack(cards []string) bool {
+	if len(cards) != 2 {
+		return false
+	}
+
+	dealerUpCard := cards[0]
+	dealerHoleCard := cards[1]
+
+	if dealerUpCard[0] == 'A' {
+		return CalculateBlackjackValueForCard(dealerHoleCard) == 10
+	} else if CalculateBlackjackValueForCard(dealerUpCard) == 10 {
+		return dealerHoleCard[0] == 'A'
+	}
+
+	return false
+}
+
+func CalculateBlackjackValueForCard(card string) int {
 	if len(card) == 2 {
 		for _, item := range ranks {
 			if item.Label[0] == card[0] {
@@ -160,10 +200,28 @@ func getBlackjackValueForCard(card string) int {
 	return -1
 }
 
-func calculateBlackjackValue(cards []string) int {
+func CalculateBaccaratValueForCard(card string) int {
+	if len(card) == 2 {
+		for _, item := range ranks {
+			if item.Label[0] == card[0] {
+				return int(item.BaccaratValue)
+			}
+		}
+	} else {
+		for _, item := range ranks {
+			if item.Label == card {
+				return int(item.BaccaratValue)
+			}
+		}
+	}
+
+	return -1
+}
+
+func CalculateBlackjackValueForCards(cards []string) int {
 	returnValue := 0
 	for _, card := range cards {
-		returnValue += getBlackjackValueForCard(card)
+		returnValue += CalculateBlackjackValueForCard(card)
 	}
 
 	acesAs11s := 0
@@ -182,6 +240,15 @@ func calculateBlackjackValue(cards []string) int {
 	return returnValue
 }
 
+func CalculateBaccaratValueForCards(cards []string) int {
+	returnValue := 0
+	for _, card := range cards {
+		returnValue += CalculateBaccaratValueForCard(card)
+	}
+
+	return returnValue % 10
+}
+
 // Handlers
 
 func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -189,25 +256,55 @@ func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
 	itemLabel := params["label"]
-	blackjackValue := getBlackjackValueForCard(itemLabel)
+	blackjackValue := CalculateBlackjackValueForCard(itemLabel)
 	json.NewEncoder(w).Encode(blackjackValue)
 }
 
 func GetBlackjackValueForCardsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	println("IN THE HANDLER")
 	var cardsBody CardsBody
 	err := json.NewDecoder(r.Body).Decode(&cardsBody)
 	if err != nil {
-		println("sending an error")
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
 	cards := cardsBody.Cards
 
-	blackjackValue := calculateBlackjackValue(cards)
+	blackjackValue := CalculateBlackjackValueForCards(cards)
 
 	json.NewEncoder(w).Encode(blackjackValue)
+}
+
+func GetBaccaratValueForCardsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	baccaratValue := CalculateBaccaratValueForCards(cards)
+
+	json.NewEncoder(w).Encode(baccaratValue)
+}
+
+func GetBaccaratNaturalHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	if (CalculateBaccaratValueForCards(cards) == 9 || CalculateBaccaratValueForCards(cards) == 8) && len(cards) == 2 {
+		json.NewEncoder(w).Encode(true)
+	} else {
+		json.NewEncoder(w).Encode(false)
+	}
 }
 
 func GetRankBaccaratValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +321,34 @@ func GetRankBaccaratValueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.NotFound(w, r)
+}
+
+func GetBlackjackSoftHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	isSoft := CalculateIsSoft(cards)
+	json.NewEncoder(w).Encode(isSoft)
+}
+
+func GetBlackjackBustHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	cardsValue := CalculateBlackjackValueForCards(cards)
+	json.NewEncoder(w).Encode(cardsValue > 21)
 }
 
 func GetRankOrderHandler(w http.ResponseWriter, r *http.Request) {
@@ -266,7 +391,6 @@ func DrawCardHandler(w http.ResponseWriter, r *http.Request) {
 	drawnCard := shoe.DrawCard()
 	json.NewEncoder(w).Encode(drawnCard.String())
 	return
-
 }
 
 func CardsLeftHandler(w http.ResponseWriter, r *http.Request) {
@@ -319,6 +443,77 @@ func CardResourceNameHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func GetBlackjackForDealerHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	isBlackjack := CalculateIsBlackjack(cards)
+	json.NewEncoder(w).Encode(isBlackjack)
+}
+
+func GetBlackjackRanksForValuesHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var valuesBody ValuesBody
+	err := json.NewDecoder(r.Body).Decode(&valuesBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	values := valuesBody.Values
+
+	result := make([]string, len(values))
+
+	for i, value := range values {
+		for _, item := range ranks {
+			if item.BlackjackValue == value {
+				result[i] = item.Label + "S"
+			}
+		}
+	}
+
+	json.NewEncoder(w).Encode(result)
+}
+
+func GetRankComparisonHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+	rank1 := params["rank1"]
+	rank2 := params["rank2"]
+
+	var result int = 0
+
+	if rank1 == "A" && rank2 != "A" {
+		result = 1
+	} else if rank1 != "A" && rank2 == "A" {
+		result = -1
+	} else {
+		var rank1Order, rank2Order uint8
+		for _, item := range ranks {
+			if item.Label == rank1 {
+				rank1Order = item.Order
+			}
+			if item.Label == rank2 {
+				rank2Order = item.Order
+			}
+		}
+
+		if rank1Order > rank2Order {
+			result = 1
+		} else if rank1Order < rank2Order {
+			result = -1
+		}
+	}
+
+	json.NewEncoder(w).Encode(result)
+}
+
 func init() {
 	println("init running")
 	SetUpRanksAndSuits()
@@ -364,6 +559,13 @@ func main() {
 	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
 	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
 	router.HandleFunc("/blackjack/value", GetBlackjackValueForCardsHandler).Methods("POST")
+	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
+	router.HandleFunc("/baccarat/natural", GetBaccaratNaturalHandler).Methods("POST")
+	router.HandleFunc("/blackjack/soft", GetBlackjackSoftHandler).Methods("POST")
+	router.HandleFunc("/blackjack/bust", GetBlackjackBustHandler).Methods("POST")
+	router.HandleFunc("/blackjack", GetBlackjackForDealerHandler).Methods("POST")
+	router.HandleFunc("/blackjack/values/ranks", GetBlackjackRanksForValuesHandler).Methods("POST")
+	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
