@@ -15,6 +15,11 @@ import (
 
 // Structs
 
+type StrategyBody struct {
+	Cards  []string `json:"cards"`
+	UpCard string   `json:"upCard"`
+}
+
 type CardsBody struct {
 	Cards []string `json:"cards"`
 }
@@ -480,6 +485,35 @@ func GetBlackjackRanksForValuesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func GetBlackjackDescriptionHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	handValue := CalculateBlackjackValueForCards(cards)
+
+	var result string
+
+	if handValue == 21 && len(cards) == 2 {
+		result = " (Natural 21)"
+	} else {
+		isSoft := CalculateIsSoft(cards)
+		if isSoft {
+			result = " (Soft " + strconv.Itoa(handValue) + ")"
+		} else {
+			result = " (Hard " + strconv.Itoa(handValue) + ")"
+		}
+
+	}
+	json.NewEncoder(w).Encode(result)
+
+}
+
 func GetRankComparisonHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -512,6 +546,155 @@ func GetRankComparisonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(result)
+}
+
+func CalculateStrategyDecision(cards []string, upCard string) string {
+	handValue := CalculateBlackjackValueForCards(cards)
+	dealerUpCardValue := CalculateBlackjackValueForCard(upCard)
+	var result string
+
+	if len(cards) == 2 && cards[0][0] == cards[1][0] && handValue != 10 && handValue != 20 {
+		switch cards[0][0] {
+		case 'A', '8':
+			result = "SPLIT"
+		case '2', '3', '7':
+			if dealerUpCardValue < 8 {
+				result = "SPLIT"
+			} else {
+				result = "HIT"
+			}
+		case '4':
+			if dealerUpCardValue == 5 || dealerUpCardValue == 6 {
+				result = "SPLIT"
+			} else {
+				result = "HIT"
+			}
+		case '6':
+			if dealerUpCardValue < 7 {
+				result = "SPLIT"
+			} else {
+				result = "HIT"
+			}
+		default:
+			switch dealerUpCardValue {
+			case 7, 10, 11:
+				result = "STAND"
+			default:
+				result = "SPLIT"
+			}
+		}
+	} else if CalculateIsSoft(cards) {
+		switch handValue {
+		case 19, 20:
+			result = "STAND"
+		case 18:
+			switch dealerUpCardValue {
+			case 2, 7, 8:
+				result = "STAND"
+			default:
+				if dealerUpCardValue > 2 && dealerUpCardValue < 7 {
+					if len(cards) == 2 {
+						result = "DOUBLE"
+					} else {
+						result = "HIT"
+					}
+				} else {
+					result = "HIT"
+				}
+			}
+		case 17:
+			if dealerUpCardValue > 2 && dealerUpCardValue < 7 {
+				if len(cards) == 2 {
+					result = "DOUBLE"
+				} else {
+					result = "HIT"
+				}
+			} else {
+				result = "HIT"
+			}
+		case 15, 16:
+			if dealerUpCardValue > 3 && dealerUpCardValue < 7 {
+				if len(cards) == 2 {
+					result = "DOUBLE"
+				} else {
+					result = "HIT"
+				}
+			} else {
+				result = "HIT"
+			}
+		case 13, 14:
+			if dealerUpCardValue > 4 && dealerUpCardValue < 7 {
+				if len(cards) == 2 {
+					result = "DOUBLE"
+				} else {
+					result = "HIT"
+				}
+			} else {
+				result = "HIT"
+			}
+		default:
+			result = "HIT"
+		}
+	} else {
+		if dealerUpCardValue < 7 {
+			switch handValue {
+			case 9:
+				if dealerUpCardValue == 2 {
+					result = "HIT"
+				} else if len(cards) == 2 {
+					result = "DOUBLE"
+				} else {
+					result = "HIT"
+				}
+			case 10, 11:
+				if len(cards) == 2 {
+					result = "DOUBLE"
+				} else {
+					result = "HIT"
+				}
+			case 12:
+				switch dealerUpCardValue {
+				case 2, 3:
+					result = "HIT"
+				default:
+					result = "STAND"
+				}
+			default:
+				if handValue < 9 {
+					result = "HIT"
+				} else {
+					result = "STAND"
+				}
+			}
+		} else if handValue < 17 {
+			if (handValue == 10 || handValue == 11) && dealerUpCardValue < handValue && len(cards) == 2 {
+				result = "DOUBLE"
+			} else {
+				result = "HIT"
+			}
+		} else {
+			result = "STAND"
+		}
+	}
+	return result
+}
+
+func GetBlackjackStrategyHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var strategyBody StrategyBody
+	err := json.NewDecoder(r.Body).Decode(&strategyBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := strategyBody.Cards
+	upCard := strategyBody.UpCard
+
+	result := CalculateStrategyDecision(cards, upCard)
+
+	json.NewEncoder(w).Encode(result)
+
 }
 
 func init() {
@@ -566,6 +749,8 @@ func main() {
 	router.HandleFunc("/blackjack", GetBlackjackForDealerHandler).Methods("POST")
 	router.HandleFunc("/blackjack/values/ranks", GetBlackjackRanksForValuesHandler).Methods("POST")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
+	router.HandleFunc("/blackjack/value/description", GetBlackjackDescriptionHandler).Methods("POST")
+	router.HandleFunc("/blackjack/strategy", GetBlackjackStrategyHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
