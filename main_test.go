@@ -18,6 +18,265 @@ func TestBlackjack(t *testing.T) {
 			}
 		}
 	}
+
+	hardHands := [][]string{
+		{"T", "4"},
+		{"8", "9"},
+		{"2", "T"},
+		{"K", "J"},
+		{"4", "Q"},
+		{"Q", "5"},
+	}
+
+	for _, hand := range hardHands {
+		soft := CalculateIsSoft(hand)
+		if soft {
+			t.Errorf("soft hand not expected")
+		}
+	}
+
+	softHands := [][]string{
+		{"A", "4"},
+		{"2", "A"},
+		{"A", "A"},
+		{"3", "A"},
+		{"A", "T"},
+		{"Q", "A"},
+	}
+
+	for _, hand := range softHands {
+		soft := CalculateIsSoft(hand)
+		if !soft {
+			t.Errorf("hard hand not expected")
+		}
+	}
+
+	blackjackHands := [][]string{
+		{"A", "J"},
+	}
+
+	for _, hand := range blackjackHands {
+		isBlackjack := CalculateIsBlackjack(hand)
+		if !isBlackjack {
+			t.Errorf("blackjack expected")
+		}
+	}
+
+	nonBlackjackHands := [][]string{
+		{"4", "J"},
+		{"2", "2"},
+		{"A", "7"},
+	}
+
+	for _, hand := range nonBlackjackHands {
+		isBlackjack := CalculateIsBlackjack(hand)
+		if isBlackjack {
+			t.Errorf("blackjack not expected")
+		}
+	}
+
+}
+
+func TestBlackjackHandCreation(t *testing.T) {
+
+	value4Hands := [][]string{
+		{"2", "2"},
+	}
+
+	value5Hands := [][]string{
+		{"3", "2"},
+	}
+
+	value6Hands := [][]string{
+		{"4", "2"},
+		{"3", "3"},
+	}
+
+	value7Hands := [][]string{
+		{"5", "2"},
+		{"4", "3"},
+	}
+
+	value8Hands := [][]string{
+		{"6", "2"},
+		{"5", "3"},
+		{"4", "4"},
+	}
+
+	value9Hands := [][]string{
+		{"7", "2"},
+		{"6", "3"},
+		{"5", "4"},
+	}
+
+	value10Hands := [][]string{
+		{"8", "2"},
+		{"7", "3"},
+		{"6", "4"},
+	}
+
+	value11Hands := [][]string{
+		{"9", "2"},
+		{"8", "3"},
+		{"7", "4"},
+	}
+
+	value12Hands := [][]string{
+		{"A", "A"},
+		{"9", "3"},
+		{"8", "4"},
+	}
+
+	value13Hands := [][]string{
+		{"A", "2"},
+		{"9", "4"},
+		{"8", "5"},
+	}
+
+	value14Hands := [][]string{
+		{"A", "3"},
+		{"Q", "4"},
+		{"9", "5"},
+	}
+
+	value15Hands := [][]string{
+		{"A", "4"},
+		{"Q", "5"},
+		{"9", "6"},
+	}
+
+	value16Hands := [][]string{
+		{"A", "5"},
+		{"Q", "6"},
+		{"9", "7"},
+	}
+
+	value17Hands := [][]string{
+		{"A", "6"},
+		{"Q", "7"},
+		{"9", "8"},
+	}
+
+	value18Hands := [][]string{
+		{"A", "7"},
+		{"Q", "8"},
+		{"9", "9"},
+	}
+
+	value19Hands := [][]string{
+		{"A", "8"},
+		{"Q", "9"},
+		{"9", "T"},
+	}
+
+	value20Hands := [][]string{
+		{"A", "9"},
+		{"Q", "K"},
+		{"T", "J"},
+	}
+
+	for _, hand := range value4Hands {
+		if CalculateBlackjackValueForCards(hand) != 4 {
+			t.Errorf("4 expected")
+		}
+	}
+
+	for _, hand := range value5Hands {
+		if CalculateBlackjackValueForCards(hand) != 5 {
+			t.Errorf("5 expected")
+		}
+	}
+
+	for _, hand := range value6Hands {
+		if CalculateBlackjackValueForCards(hand) != 6 {
+			t.Errorf("6 expected")
+		}
+	}
+
+	for _, hand := range value7Hands {
+		if CalculateBlackjackValueForCards(hand) != 7 {
+			t.Errorf("7 expected")
+		}
+	}
+
+	for _, hand := range value8Hands {
+		if CalculateBlackjackValueForCards(hand) != 8 {
+			t.Errorf("8 expected")
+		}
+	}
+
+	for _, hand := range value9Hands {
+		if CalculateBlackjackValueForCards(hand) != 9 {
+			t.Errorf("9 expected")
+		}
+	}
+
+	for _, hand := range value10Hands {
+		if CalculateBlackjackValueForCards(hand) != 10 {
+			t.Errorf("10 expected")
+		}
+	}
+
+	for _, hand := range value11Hands {
+		if CalculateBlackjackValueForCards(hand) != 11 {
+			t.Errorf("11 expected")
+		}
+	}
+
+	for _, hand := range value12Hands {
+		if CalculateBlackjackValueForCards(hand) != 12 {
+			t.Errorf("12 expected")
+		}
+	}
+
+	for _, hand := range value13Hands {
+		if CalculateBlackjackValueForCards(hand) != 13 {
+			t.Errorf("13 expected")
+		}
+	}
+
+	for _, hand := range value14Hands {
+		if CalculateBlackjackValueForCards(hand) != 14 {
+			t.Errorf("14 expected")
+		}
+	}
+
+	for _, hand := range value15Hands {
+		if CalculateBlackjackValueForCards(hand) != 15 {
+			t.Errorf("15 expected")
+		}
+	}
+
+	for _, hand := range value16Hands {
+		if CalculateBlackjackValueForCards(hand) != 16 {
+			t.Errorf("16 expected")
+		}
+	}
+
+	for _, hand := range value17Hands {
+		if CalculateBlackjackValueForCards(hand) != 17 {
+			t.Errorf("17 expected")
+		}
+	}
+
+	for _, hand := range value18Hands {
+		if CalculateBlackjackValueForCards(hand) != 18 {
+			t.Errorf("18 expected")
+		}
+	}
+
+	for _, hand := range value19Hands {
+		if CalculateBlackjackValueForCards(hand) != 19 {
+			t.Errorf("19 expected")
+		}
+	}
+
+	for _, hand := range value20Hands {
+		if CalculateBlackjackValueForCards(hand) != 20 {
+			t.Errorf("20 expected")
+		}
+	}
+
 }
 
 func TestBlackjackDecisions(t *testing.T) {
@@ -333,6 +592,170 @@ func TestBlackjackDecisions(t *testing.T) {
 			if decision != "HIT" {
 				t.Errorf("HIT expected")
 			}
+		}
+	}
+
+}
+
+func TestBaccaratNaturals(t *testing.T) {
+
+	naturalHands := [][]string{
+		{"2", "7"},
+		{"A", "8"},
+		{"4", "5"},
+		{"6", "3"},
+		{"5", "4"},
+		{"8", "A"},
+		{"3", "6"},
+		{"7", "2"},
+	}
+
+	for _, hand := range naturalHands {
+		isNatural := CalculateIsNatural(hand)
+		if !isNatural {
+			t.Errorf("natural expected")
+		}
+	}
+
+	nonNaturalHands := [][]string{
+		{"4", "K"},
+		{"2", "2"},
+		{"5", "7"},
+		{"5", "7", "7"},
+		{"K", "Q", "9"},
+		{"2", "4", "3"},
+		{"A", "8", "9"},
+	}
+
+	for _, hand := range nonNaturalHands {
+		if CalculateIsNatural(hand) {
+			t.Errorf("natural not expected")
+		}
+	}
+
+}
+
+func TestBaccaratHandCreation(t *testing.T) {
+
+	value4Hands := [][]string{
+		{"2", "2"},
+		{"A", "A", "2"},
+	}
+
+	value5Hands := [][]string{
+		{"3", "2"},
+	}
+
+	value6Hands := [][]string{
+		{"4", "2"},
+		{"3", "3"},
+	}
+
+	value7Hands := [][]string{
+		{"5", "2"},
+		{"4", "3"},
+	}
+
+	value8Hands := [][]string{
+		{"6", "2"},
+		{"5", "3"},
+		{"4", "4"},
+	}
+
+	value9Hands := [][]string{
+		{"7", "2"},
+		{"6", "3"},
+		{"5", "4"},
+	}
+
+	value0Hands := [][]string{
+		{"8", "2"},
+		{"7", "3"},
+		{"6", "4"},
+		{"5", "5"},
+	}
+
+	value1Hands := [][]string{
+		{"9", "2"},
+		{"8", "3"},
+		{"7", "4"},
+		{"6", "5"},
+	}
+
+	value2Hands := [][]string{
+		{"A", "A"},
+		{"K", "2"},
+		{"9", "3"},
+		{"8", "4"},
+		{"7", "5"},
+		{"6", "6"},
+	}
+
+	value3Hands := [][]string{
+		{"A", "2"},
+		{"K", "3"},
+		{"9", "4"},
+		{"8", "5"},
+		{"7", "6"},
+	}
+
+	for _, hand := range value0Hands {
+		if CalculateBaccaratValueForCards(hand) != 0 {
+			t.Errorf("0 expected")
+		}
+	}
+
+	for _, hand := range value1Hands {
+		if CalculateBaccaratValueForCards(hand) != 1 {
+			t.Errorf("1 expected")
+		}
+	}
+
+	for _, hand := range value2Hands {
+		if CalculateBaccaratValueForCards(hand) != 2 {
+			t.Errorf("2 expected")
+		}
+	}
+
+	for _, hand := range value3Hands {
+		if CalculateBaccaratValueForCards(hand) != 3 {
+			t.Errorf("3 expected")
+		}
+	}
+
+	for _, hand := range value4Hands {
+		if CalculateBaccaratValueForCards(hand) != 4 {
+			t.Errorf("4 expected")
+		}
+	}
+
+	for _, hand := range value5Hands {
+		if CalculateBaccaratValueForCards(hand) != 5 {
+			t.Errorf("5 expected")
+		}
+	}
+
+	for _, hand := range value6Hands {
+		if CalculateBaccaratValueForCards(hand) != 6 {
+			t.Errorf("6 expected")
+		}
+	}
+
+	for _, hand := range value7Hands {
+		if CalculateBaccaratValueForCards(hand) != 7 {
+			t.Errorf("7 expected")
+		}
+	}
+
+	for _, hand := range value8Hands {
+		if CalculateBaccaratValueForCards(hand) != 8 {
+			t.Errorf("8 expected")
+		}
+	}
+
+	for _, hand := range value9Hands {
+		if CalculateBaccaratValueForCards(hand) != 9 {
+			t.Errorf("9 expected")
 		}
 	}
 

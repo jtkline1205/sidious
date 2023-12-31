@@ -151,6 +151,10 @@ func (s *Shoe) String() string {
 	return result
 }
 
+func CalculateIsNatural(cards []string) bool {
+	return (CalculateBaccaratValueForCards(cards) == 9 || CalculateBaccaratValueForCards(cards) == 8) && len(cards) == 2
+}
+
 func CalculateIsSoft(cards []string) bool {
 	var value, acesAs11s int
 
@@ -305,7 +309,7 @@ func GetBaccaratNaturalHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	cards := cardsBody.Cards
 
-	if (CalculateBaccaratValueForCards(cards) == 9 || CalculateBaccaratValueForCards(cards) == 8) && len(cards) == 2 {
+	if CalculateIsNatural(cards) {
 		json.NewEncoder(w).Encode(true)
 	} else {
 		json.NewEncoder(w).Encode(false)
