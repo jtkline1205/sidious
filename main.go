@@ -59,6 +59,7 @@ type Shoe struct {
 var ranks []Rank
 var suits []Suit
 var SizeToShoeMap = make(map[int]*Shoe)
+var SizeToSequencedCardsMap = make(map[int][]Card)
 var mutex = &sync.Mutex{}
 
 // Functions
@@ -123,15 +124,21 @@ func NewShoe(numDecks int) *Shoe {
 
 func (s *Shoe) DrawCard() Card {
 	if len(s.Decks) == 0 {
-		panic("shoe is empty")
+		panic("shoe has no decks")
 	}
 
-	// Choose a random deck from the shoe
-	rand.Seed(time.Now().UnixNano())
-	deckIndex := rand.Intn(len(s.Decks))
-
-	// Draw a card from the selected deck
-	return s.Decks[deckIndex].DrawCard()
+	shoeSize := len(s.Decks)
+	sequencedCards := SizeToSequencedCardsMap[shoeSize]
+	if len(sequencedCards) == 0 {
+		// Choose a random deck from the shoe
+		rand.Seed(time.Now().UnixNano())
+		deckIndex := rand.Intn(len(s.Decks))
+		return s.Decks[deckIndex].DrawCard()
+	} else {
+		drawnSequencedCard := sequencedCards[0]
+		SizeToSequencedCardsMap[shoeSize] = sequencedCards[1:]
+		return drawnSequencedCard
+	}
 }
 
 func (s *Shoe) HasCards() bool {
@@ -256,6 +263,35 @@ func CalculateBaccaratValueForCards(cards []string) int {
 	}
 
 	return returnValue % 10
+}
+
+func MakeCardsFromStrings(cardStrings []string) []Card {
+	var cards []Card
+
+	for _, cardString := range cardStrings {
+		if len(cardString) >= 2 {
+			card := Card{
+				RankLabel: string(cardString[0]),
+				Suit:      string(cardString[1]),
+			}
+			cards = append(cards, card)
+		}
+	}
+
+	return cards
+}
+
+func SetCardsInShoe(shoeSize int, cards []string) bool {
+	cardStructs := MakeCardsFromStrings(cards)
+
+	SizeToSequencedCardsMap[shoeSize] = cardStructs
+
+	return true
+}
+
+func ResetShoe(shoeSize int) bool {
+	SizeToShoeMap[shoeSize] = NewShoe(shoeSize)
+	return true
 }
 
 // Handlers
@@ -515,7 +551,6 @@ func GetBlackjackDescriptionHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	json.NewEncoder(w).Encode(result)
-
 }
 
 func GetRankComparisonHandler(w http.ResponseWriter, r *http.Request) {
@@ -698,11 +733,50 @@ func GetBlackjackStrategyHandler(w http.ResponseWriter, r *http.Request) {
 	result := CalculateStrategyDecision(cards, upCard)
 
 	json.NewEncoder(w).Encode(result)
+}
 
+func SetCardsInShoeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var cardsBody CardsBody
+
+	vars := mux.Vars(r)
+	shoeSizeStr := vars["shoeSize"]
+
+	shoeSize, shoeSizeErr := strconv.Atoi(shoeSizeStr)
+	if shoeSizeErr != nil {
+		http.Error(w, "Invalid shoe size", http.StatusBadRequest)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	SetCardsInShoe(shoeSize, cards)
+	json.NewEncoder(w).Encode(true)
+}
+
+func ResetShoeHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	shoeSizeStr := vars["shoeSize"]
+
+	shoeSize, shoeSizeErr := strconv.Atoi(shoeSizeStr)
+	if shoeSizeErr != nil {
+		http.Error(w, "Invalid shoe size", http.StatusBadRequest)
+		return
+	}
+
+	ResetShoe(shoeSize)
+	json.NewEncoder(w).Encode(true)
 }
 
 func init() {
-	println("init running")
 	SetUpRanksAndSuits()
 }
 
@@ -728,7 +802,6 @@ func SetUpRanksAndSuits() {
 }
 
 func main() {
-	println("main running")
 	SetUpRanksAndSuits()
 
 	SizeToShoeMap[1] = NewShoe(1)
@@ -755,6 +828,8 @@ func main() {
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
 	router.HandleFunc("/blackjack/value/description", GetBlackjackDescriptionHandler).Methods("POST")
 	router.HandleFunc("/blackjack/strategy", GetBlackjackStrategyHandler).Methods("POST")
+	router.HandleFunc("/shoes/{shoeSize}/setCards", SetCardsInShoeHandler).Methods("POST")
+	router.HandleFunc("/shoes/{shoeSize}/reset", ResetShoeHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
