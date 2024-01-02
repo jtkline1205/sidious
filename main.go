@@ -133,7 +133,13 @@ func (s *Shoe) DrawCard() Card {
 		// Choose a random deck from the shoe
 		rand.Seed(time.Now().UnixNano())
 		deckIndex := rand.Intn(len(s.Decks))
-		return s.Decks[deckIndex].DrawCard()
+		if s.Decks[deckIndex].HasCards() {
+			return s.Decks[deckIndex].DrawCard()
+		} else {
+			ResetShoe(shoeSize)
+			return SizeToShoeMap[shoeSize].DrawCard()
+		}
+
 	} else {
 		drawnSequencedCard := sequencedCards[0]
 		SizeToSequencedCardsMap[shoeSize] = sequencedCards[1:]
@@ -807,6 +813,7 @@ func main() {
 	SizeToShoeMap[1] = NewShoe(1)
 	SizeToShoeMap[2] = NewShoe(2)
 	SizeToShoeMap[4] = NewShoe(4)
+	SizeToShoeMap[6] = NewShoe(6)
 	SizeToShoeMap[8] = NewShoe(8)
 	SizeToShoeMap[9] = NewShoe(9)
 	SizeToShoeMap[10] = NewShoe(10)
