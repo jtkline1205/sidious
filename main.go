@@ -819,24 +819,28 @@ func main() {
 	SizeToShoeMap[10] = NewShoe(10)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/ranks/{label}/blackjackValue", GetRankBlackjackValueHandler).Methods("GET")
-	router.HandleFunc("/ranks/{label}/baccaratValue", GetRankBaccaratValueHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
-	router.HandleFunc("/shoes/{shoeSize}/draw", DrawCardHandler).Methods("GET")
-	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
-	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
-	router.HandleFunc("/blackjack/value", GetBlackjackValueForCardsHandler).Methods("POST")
-	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
-	router.HandleFunc("/baccarat/natural", GetBaccaratNaturalHandler).Methods("POST")
-	router.HandleFunc("/blackjack/soft", GetBlackjackSoftHandler).Methods("POST")
-	router.HandleFunc("/blackjack/bust", GetBlackjackBustHandler).Methods("POST")
-	router.HandleFunc("/blackjack", GetBlackjackForDealerHandler).Methods("POST")
-	router.HandleFunc("/blackjack/values/ranks", GetBlackjackRanksForValuesHandler).Methods("POST")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
-	router.HandleFunc("/blackjack/value/description", GetBlackjackDescriptionHandler).Methods("POST")
-	router.HandleFunc("/blackjack/strategy", GetBlackjackStrategyHandler).Methods("POST")
+
+	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
+
 	router.HandleFunc("/shoes/{shoeSize}/setCards", SetCardsInShoeHandler).Methods("POST")
 	router.HandleFunc("/shoes/{shoeSize}/reset", ResetShoeHandler).Methods("POST")
+	router.HandleFunc("/shoes/{shoeSize}/draw", DrawCardHandler).Methods("GET")
+	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
+
+	router.HandleFunc("/blackjack", GetBlackjackForDealerHandler).Methods("POST")
+	router.HandleFunc("/blackjack/strategy", GetBlackjackStrategyHandler).Methods("POST")
+	router.HandleFunc("/blackjack/soft", GetBlackjackSoftHandler).Methods("POST")
+	router.HandleFunc("/blackjack/bust", GetBlackjackBustHandler).Methods("POST")
+	router.HandleFunc("/blackjack/ranks/{label}", GetRankBlackjackValueHandler).Methods("GET")
+	router.HandleFunc("/blackjack/values", GetBlackjackValueForCardsHandler).Methods("POST")
+	router.HandleFunc("/blackjack/values/ranks", GetBlackjackRanksForValuesHandler).Methods("POST")
+	router.HandleFunc("/blackjack/values/description", GetBlackjackDescriptionHandler).Methods("POST")
+
+	router.HandleFunc("/baccarat/natural", GetBaccaratNaturalHandler).Methods("POST")
+	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
+	router.HandleFunc("/baccarat/ranks/{label}", GetRankBaccaratValueHandler).Methods("GET")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
