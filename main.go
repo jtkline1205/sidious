@@ -28,6 +28,10 @@ type ValuesBody struct {
 	Values []uint8 `json:"values"`
 }
 
+type SingleStringBody struct {
+	SingleString string `json:"singleString"`
+}
+
 type Rank struct {
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
@@ -39,6 +43,11 @@ type Rank struct {
 type Suit struct {
 	Name  string `json:"name"`
 	Label string `json:"label"`
+}
+
+type PokerHandType struct {
+	Name     string `json:"name"`
+	Strength uint8  `json:"strength"`
 }
 
 type Card struct {
@@ -58,6 +67,7 @@ type Shoe struct {
 
 var ranks []Rank
 var suits []Suit
+var pokerHandTypes []PokerHandType
 var SizeToShoeMap = make(map[int]*Shoe)
 var SizeToSequencedCardsMap = make(map[int][]Card)
 var mutex = &sync.Mutex{}
@@ -782,6 +792,26 @@ func ResetShoeHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(true)
 }
 
+func GetPokerHandStrengthHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var singleStringBody SingleStringBody
+	err := json.NewDecoder(r.Body).Decode(&singleStringBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	singleString := singleStringBody.SingleString
+
+	for _, item := range pokerHandTypes {
+		if item.Name == singleString {
+			json.NewEncoder(w).Encode(item.Strength)
+			return
+		}
+	}
+
+	http.NotFound(w, r)
+}
+
 func init() {
 	SetUpRanksAndSuits()
 }
@@ -805,6 +835,18 @@ func SetUpRanksAndSuits() {
 	suits = append(suits, Suit{Name: "Spades", Label: "S"})
 	suits = append(suits, Suit{Name: "Diamonds", Label: "D"})
 	suits = append(suits, Suit{Name: "Clubs", Label: "C"})
+
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "High Card", Strength: 1})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Pair", Strength: 2})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Two Pair", Strength: 3})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Three Of A Kind", Strength: 4})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Straight", Strength: 5})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Flush", Strength: 6})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Full House", Strength: 7})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Four Of A Kind", Strength: 8})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Straight Flush", Strength: 9})
+	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Royal Flush", Strength: 10})
+
 }
 
 func main() {
@@ -812,8 +854,11 @@ func main() {
 
 	SizeToShoeMap[1] = NewShoe(1)
 	SizeToShoeMap[2] = NewShoe(2)
+	SizeToShoeMap[3] = NewShoe(3)
 	SizeToShoeMap[4] = NewShoe(4)
+	SizeToShoeMap[5] = NewShoe(5)
 	SizeToShoeMap[6] = NewShoe(6)
+	SizeToShoeMap[7] = NewShoe(7)
 	SizeToShoeMap[8] = NewShoe(8)
 	SizeToShoeMap[9] = NewShoe(9)
 	SizeToShoeMap[10] = NewShoe(10)
@@ -821,14 +866,11 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
-
 	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
-
 	router.HandleFunc("/shoes/{shoeSize}/setCards", SetCardsInShoeHandler).Methods("POST")
 	router.HandleFunc("/shoes/{shoeSize}/reset", ResetShoeHandler).Methods("POST")
 	router.HandleFunc("/shoes/{shoeSize}/draw", DrawCardHandler).Methods("GET")
 	router.HandleFunc("/shoes/{shoeSize}/cardsLeft", CardsLeftHandler).Methods("GET")
-
 	router.HandleFunc("/blackjack", GetBlackjackForDealerHandler).Methods("POST")
 	router.HandleFunc("/blackjack/strategy", GetBlackjackStrategyHandler).Methods("POST")
 	router.HandleFunc("/blackjack/soft", GetBlackjackSoftHandler).Methods("POST")
@@ -837,10 +879,10 @@ func main() {
 	router.HandleFunc("/blackjack/values", GetBlackjackValueForCardsHandler).Methods("POST")
 	router.HandleFunc("/blackjack/values/ranks", GetBlackjackRanksForValuesHandler).Methods("POST")
 	router.HandleFunc("/blackjack/values/description", GetBlackjackDescriptionHandler).Methods("POST")
-
 	router.HandleFunc("/baccarat/natural", GetBaccaratNaturalHandler).Methods("POST")
 	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
 	router.HandleFunc("/baccarat/ranks/{label}", GetRankBaccaratValueHandler).Methods("GET")
+	router.HandleFunc("/poker/strength", GetPokerHandStrengthHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
