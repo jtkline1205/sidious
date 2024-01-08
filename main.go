@@ -425,6 +425,27 @@ func GetRankOrderHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	json.NewEncoder(w).Encode(0)
+}
+
+func GetOrderRankHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	params := mux.Vars(r)
+	itemOrderInt, err := strconv.Atoi(params["order"])
+	itemOrder := uint8(itemOrderInt)
+
+	if err != nil {
+		http.Error(w, "Invalid order", http.StatusBadRequest)
+		return
+	}
+	for _, item := range ranks {
+		if item.Order == itemOrder {
+			json.NewEncoder(w).Encode(item.Label)
+			return
+		}
+	}
+
 	http.NotFound(w, r)
 }
 
@@ -864,6 +885,7 @@ func main() {
 	SizeToShoeMap[10] = NewShoe(10)
 
 	router := mux.NewRouter()
+	router.HandleFunc("/orders/{order}/rank", GetOrderRankHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
 	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
