@@ -42,6 +42,10 @@ type StringsAndStringBody struct {
 	String  string   `json:"string"`
 }
 
+type StringsBody struct {
+	Strings []string `json:"strings"`
+}
+
 type Rank struct {
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
@@ -349,6 +353,32 @@ func UpdateFlushKeyRanks(cards []string, flushSuit rune) map[rune]bool {
 	}
 
 	return flushKeyRanks
+}
+
+func CalculateIsFlush(cards []string) bool {
+	suitFreqs := make(map[rune]int)
+
+	for _, card := range cards {
+		suit := rune(card[1])
+		suitFreqs[suit]++
+		if suitFreqs[suit] >= 5 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func FindMaxRank(ranks []rune) rune {
+	currentMaxRank := 'N'
+
+	for _, rank := range ranks {
+		if currentMaxRank != 'A' && (FindOrderForRank(string(rank)) > FindOrderForRank(string(currentMaxRank)) || rank == 'A') {
+			currentMaxRank = rank
+		}
+	}
+
+	return currentMaxRank
 }
 
 // Handlers
@@ -886,6 +916,39 @@ func GetPokerFlushRanksHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(jsonResponse)
 }
 
+func GetPokerFlushHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var cardsBody CardsBody
+	err := json.NewDecoder(r.Body).Decode(&cardsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := cardsBody.Cards
+
+	isFlush := CalculateIsFlush(cards)
+
+	json.NewEncoder(w).Encode(isFlush)
+}
+
+func GetMaxRankHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var stringsBody StringsBody
+	err := json.NewDecoder(r.Body).Decode(&stringsBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	strings := stringsBody.Strings
+	var runeSlice []rune
+	for _, str := range strings {
+		runeSlice = append(runeSlice, []rune(str)...)
+	}
+	maxRank := FindMaxRank(runeSlice)
+
+	json.NewEncoder(w).Encode(maxRank)
+}
+
 func init() {
 	SetUpRanksAndSuits()
 }
@@ -941,6 +1004,7 @@ func main() {
 	router.HandleFunc("/orders/{order}/rank", GetOrderRankHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
+	router.HandleFunc("/ranks/max", GetMaxRankHandler).Methods("POST")
 	router.HandleFunc("/cards/resourceName", CardResourceNameHandler).Methods("GET")
 	router.HandleFunc("/shoes/{shoeSize}/setCards", SetCardsInShoeHandler).Methods("POST")
 	router.HandleFunc("/shoes/{shoeSize}/reset", ResetShoeHandler).Methods("POST")
@@ -959,6 +1023,7 @@ func main() {
 	router.HandleFunc("/baccarat/ranks/{label}", GetRankBaccaratValueHandler).Methods("GET")
 	router.HandleFunc("/poker/strength", GetPokerHandStrengthHandler).Methods("POST")
 	router.HandleFunc("/poker/flush/ranks", GetPokerFlushRanksHandler).Methods("POST")
+	router.HandleFunc("/poker/flush", GetPokerFlushHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
