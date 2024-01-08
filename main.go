@@ -9,6 +9,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gorilla/mux"
 )
@@ -18,6 +19,10 @@ import (
 type StrategyBody struct {
 	Cards  []string `json:"cards"`
 	UpCard string   `json:"upCard"`
+}
+
+type MapRuneBoolResponseBody struct {
+	Entries map[rune]bool `json:"entries"`
 }
 
 type CardsBody struct {
@@ -32,9 +37,9 @@ type SingleStringBody struct {
 	SingleString string `json:"singleString"`
 }
 
-type StringsAndRuneBody struct {
+type StringsAndStringBody struct {
 	Strings []string `json:"strings"`
-	Rune    rune     `json:"rune"`
+	String  string   `json:"string"`
 }
 
 type Rank struct {
@@ -325,7 +330,6 @@ func FindOrderForRank(rank string) int {
 }
 
 func UpdateFlushKeyRanks(cards []string, flushSuit rune) map[rune]bool {
-	//TODO FIX
 	flushKeyRanks := map[rune]bool{'N': true}
 
 	for _, card := range cards {
@@ -867,18 +871,19 @@ func GetPokerHandStrengthHandler(w http.ResponseWriter, r *http.Request) {
 
 func GetPokerFlushRanksHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var stringsAndRuneBody StringsAndRuneBody
-	err := json.NewDecoder(r.Body).Decode(&stringsAndRuneBody)
+	var stringsAndStringBody StringsAndStringBody
+	err := json.NewDecoder(r.Body).Decode(&stringsAndStringBody)
 	if err != nil {
 		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
 		return
 	}
-	cards := stringsAndRuneBody.Strings
-	flushSuit := stringsAndRuneBody.Rune
+	cards := stringsAndStringBody.Strings
+	flushSuit, _ := utf8.DecodeRuneInString(stringsAndStringBody.String)
 
 	updatedFlushRanks := UpdateFlushKeyRanks(cards, flushSuit)
-	println(updatedFlushRanks)
-	json.NewEncoder(w).Encode(updatedFlushRanks)
+	jsonResponse := MapRuneBoolResponseBody{Entries: updatedFlushRanks}
+
+	json.NewEncoder(w).Encode(jsonResponse)
 }
 
 func init() {
@@ -953,8 +958,6 @@ func main() {
 	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
 	router.HandleFunc("/baccarat/ranks/{label}", GetRankBaccaratValueHandler).Methods("GET")
 	router.HandleFunc("/poker/strength", GetPokerHandStrengthHandler).Methods("POST")
-
-	//TODO FIX
 	router.HandleFunc("/poker/flush/ranks", GetPokerFlushRanksHandler).Methods("POST")
 
 	port := 5001
