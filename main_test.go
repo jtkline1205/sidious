@@ -760,3 +760,9 @@ func TestBaccaratHandCreation(t *testing.T) {
 	}
 
 }
+
+// func TestPoker(t *testing.T) {
+// 	cards := []string{"2S", "3S", "4S", "5S", "6S"}
+
+// 	flushRanks := UpdateFlushKeyRanks(cards, flushSuit)
+// }

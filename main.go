@@ -32,6 +32,11 @@ type SingleStringBody struct {
 	SingleString string `json:"singleString"`
 }
 
+type StringsAndRuneBody struct {
+	Strings []string `json:"strings"`
+	Rune    rune     `json:"rune"`
+}
+
 type Rank struct {
 	Name           string `json:"name"`
 	BlackjackValue uint8  `json:"blackjackValue"`
@@ -310,6 +315,38 @@ func ResetShoe(shoeSize int) bool {
 	return true
 }
 
+func FindOrderForRank(rank string) int {
+	for _, item := range ranks {
+		if item.Label == rank {
+			return int(item.Order)
+		}
+	}
+	return 0
+}
+
+func UpdateFlushKeyRanks(cards []string, flushSuit rune) map[rune]bool {
+	//TODO FIX
+	flushKeyRanks := map[rune]bool{'N': true}
+
+	for _, card := range cards {
+		if rune(card[1]) == flushSuit && !flushKeyRanks[rune(card[0])] {
+			minFlushKeyRank := 'K'
+			for rank := range flushKeyRanks {
+				if FindOrderForRank(string(rank)) < FindOrderForRank(string(minFlushKeyRank)) && rank != 'A' {
+					minFlushKeyRank = rank
+				}
+			}
+
+			if rune(card[0]) == 'A' || FindOrderForRank(string(rune(card[0]))) > FindOrderForRank(string(minFlushKeyRank)) {
+				delete(flushKeyRanks, minFlushKeyRank)
+				flushKeyRanks[rune(card[0])] = true
+			}
+		}
+	}
+
+	return flushKeyRanks
+}
+
 // Handlers
 
 func GetRankBlackjackValueHandler(w http.ResponseWriter, r *http.Request) {
@@ -418,14 +455,9 @@ func GetRankOrderHandler(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	itemLabel := params["label"]
 
-	for _, item := range ranks {
-		if item.Label == itemLabel {
-			json.NewEncoder(w).Encode(item.Order)
-			return
-		}
-	}
+	orderForRank := FindOrderForRank(itemLabel)
 
-	json.NewEncoder(w).Encode(0)
+	json.NewEncoder(w).Encode(orderForRank)
 }
 
 func GetOrderRankHandler(w http.ResponseWriter, r *http.Request) {
@@ -833,6 +865,22 @@ func GetPokerHandStrengthHandler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+func GetPokerFlushRanksHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var stringsAndRuneBody StringsAndRuneBody
+	err := json.NewDecoder(r.Body).Decode(&stringsAndRuneBody)
+	if err != nil {
+		http.Error(w, "Invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+	cards := stringsAndRuneBody.Strings
+	flushSuit := stringsAndRuneBody.Rune
+
+	updatedFlushRanks := UpdateFlushKeyRanks(cards, flushSuit)
+	println(updatedFlushRanks)
+	json.NewEncoder(w).Encode(updatedFlushRanks)
+}
+
 func init() {
 	SetUpRanksAndSuits()
 }
@@ -905,6 +953,9 @@ func main() {
 	router.HandleFunc("/baccarat/value", GetBaccaratValueForCardsHandler).Methods("POST")
 	router.HandleFunc("/baccarat/ranks/{label}", GetRankBaccaratValueHandler).Methods("GET")
 	router.HandleFunc("/poker/strength", GetPokerHandStrengthHandler).Methods("POST")
+
+	//TODO FIX
+	router.HandleFunc("/poker/flush/ranks", GetPokerFlushRanksHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
