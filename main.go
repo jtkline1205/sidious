@@ -152,10 +152,8 @@ func (s *Shoe) DrawCard() Card {
 	}
 
 	shoeSize := len(s.Decks)
-	fmt.Println("drawing a card from shoeSize = " + strconv.Itoa(shoeSize))
 	sequencedCards := SizeToSequencedCardsMap[shoeSize]
 	if len(sequencedCards) == 0 {
-		fmt.Println("sequenced cards has len = 0")
 		// Choose a random deck from the shoe
 		rand.Seed(time.Now().UnixNano())
 		deckIndex := rand.Intn(len(s.Decks))
@@ -167,10 +165,7 @@ func (s *Shoe) DrawCard() Card {
 		}
 
 	} else {
-		fmt.Println("sequenced cards has len != 0")
 		drawnSequencedCard := sequencedCards[0]
-		fmt.Println("chose drawnSequencedCard")
-		fmt.Println(drawnSequencedCard)
 		SizeToSequencedCardsMap[shoeSize] = sequencedCards[1:]
 		return drawnSequencedCard
 	}
@@ -317,14 +312,9 @@ func MakeCardsFromStrings(cardStrings []string) []Card {
 }
 
 func SetCardsInShoe(shoeSize int, cards []string) bool {
-	println("setting cards in shoe with shoeSize = " + fmt.Sprint(shoeSize))
-	println("cards = " + fmt.Sprint(cards))
 	cardStructs := MakeCardsFromStrings(cards)
-	println("cardStructs = " + fmt.Sprint(cardStructs))
 
 	SizeToSequencedCardsMap[shoeSize] = cardStructs
-
-	fmt.Println(SizeToSequencedCardsMap)
 
 	return true
 }
