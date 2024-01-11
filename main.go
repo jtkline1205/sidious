@@ -983,7 +983,6 @@ func SetUpRanksAndSuits() {
 	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Four Of A Kind", Strength: 8})
 	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Straight Flush", Strength: 9})
 	pokerHandTypes = append(pokerHandTypes, PokerHandType{Name: "Royal Flush", Strength: 10})
-
 }
 
 func main() {
