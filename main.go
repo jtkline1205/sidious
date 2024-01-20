@@ -84,6 +84,7 @@ var suits []Suit
 var pokerHandTypes []PokerHandType
 var SizeToShoeMap = make(map[int]*Shoe)
 var SizeToSequencedCardsMap = make(map[int][]Card)
+var SequencedRolls []int
 var mutex = &sync.Mutex{}
 
 // Functions
@@ -949,6 +950,48 @@ func GetMaxRankHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(maxRank)
 }
 
+func RollDiceHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if len(SequencedRolls) == 0 {
+		rand.Seed(time.Now().UnixNano())
+
+		die1 := rand.Intn(6) + 1
+		die2 := rand.Intn(6) + 1
+
+		result := fmt.Sprintf("%d%d", die1, die2)
+
+		json.NewEncoder(w).Encode(result)
+	} else {
+		result := fmt.Sprintf("%d%d", SequencedRolls[0], SequencedRolls[1])
+		SequencedRolls = []int{}
+		json.NewEncoder(w).Encode(result)
+	}
+
+}
+
+func SetDiceRollsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	vars := mux.Vars(r)
+	firstRollStr := vars["roll1"]
+	secondRollStr := vars["roll2"]
+
+	firstRoll, firstRollErr := strconv.Atoi(firstRollStr)
+	if firstRollErr != nil {
+		http.Error(w, "Invalid first roll", http.StatusBadRequest)
+		return
+	}
+	secondRoll, secondRollErr := strconv.Atoi(secondRollStr)
+	if secondRollErr != nil {
+		http.Error(w, "Invalid second roll", http.StatusBadRequest)
+		return
+	}
+
+	SequencedRolls = []int{firstRoll, secondRoll}
+	json.NewEncoder(w).Encode(true)
+
+}
+
 func init() {
 	SetUpRanksAndSuits()
 }
@@ -1023,6 +1066,8 @@ func main() {
 	router.HandleFunc("/poker/strength", GetPokerHandStrengthHandler).Methods("POST")
 	router.HandleFunc("/poker/flush/ranks", GetPokerFlushRanksHandler).Methods("POST")
 	router.HandleFunc("/poker/flush", GetPokerFlushHandler).Methods("POST")
+	router.HandleFunc("/dice/roll", RollDiceHandler).Methods("GET")
+	router.HandleFunc("/dice/{roll1}/{roll2}", SetDiceRollsHandler).Methods("POST")
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
