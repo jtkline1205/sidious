@@ -313,6 +313,9 @@ func MakeCardsFromStrings(cardStrings []string) []Card {
 }
 
 func SetCardsInShoe(shoeSize int, cards []string) bool {
+	fmt.Println("SetCardsInShoe called with shoeSize = " + strconv.Itoa(shoeSize))
+	fmt.Println("cards = ")
+	fmt.Println(cards)
 	cardStructs := MakeCardsFromStrings(cards)
 
 	SizeToSequencedCardsMap[shoeSize] = cardStructs
@@ -538,6 +541,7 @@ func DrawCardHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	drawnCard := shoe.DrawCard()
+	fmt.Println("DrawCardHandler has drawn a card: " + drawnCard.String())
 	json.NewEncoder(w).Encode(drawnCard.String())
 	return
 }
@@ -846,6 +850,7 @@ func SetCardsInShoeHandler(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	shoeSizeStr := vars["shoeSize"]
+	fmt.Println("SetCardsInShoeHandler called with shoeSize = " + shoeSizeStr)
 
 	shoeSize, shoeSizeErr := strconv.Atoi(shoeSizeStr)
 	if shoeSizeErr != nil {
@@ -966,7 +971,6 @@ func RollDiceHandler(w http.ResponseWriter, r *http.Request) {
 		SequencedRolls = []int{}
 		json.NewEncoder(w).Encode(result)
 	}
-
 }
 
 func SetDiceRollsHandler(w http.ResponseWriter, r *http.Request) {
@@ -989,7 +993,6 @@ func SetDiceRollsHandler(w http.ResponseWriter, r *http.Request) {
 
 	SequencedRolls = []int{firstRoll, secondRoll}
 	json.NewEncoder(w).Encode(true)
-
 }
 
 func init() {
