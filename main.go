@@ -12,6 +12,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 // Structs
@@ -1046,6 +1047,8 @@ func main() {
 	SizeToShoeMap[10] = NewShoe(10)
 
 	router := mux.NewRouter()
+	// router.Use(corsMiddleware)
+
 	router.HandleFunc("/orders/{order}/rank", GetOrderRankHandler).Methods("GET")
 	router.HandleFunc("/ranks/{label}/order", GetRankOrderHandler).Methods("GET")
 	router.HandleFunc("/ranks/{rank1}/{rank2}", GetRankComparisonHandler).Methods("GET")
@@ -1074,5 +1077,26 @@ func main() {
 
 	port := 5001
 	fmt.Printf("Server is running on :%d...\n", port)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), router)
+	// http.ListenAndServe(fmt.Sprintf(":%d", port), handlers.CORS()(router))
+
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://192.168.1.203:3000"},
+		AllowCredentials: true,
+	})
+
+	handler := c.Handler(router)
+	http.ListenAndServe(":5001", handler)
 }
+
+// func corsMiddleware(next http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		// Allow requests from port 3000
+// 		w.Header().Set("Access-Control-Allow-Origin", "http://192.168.1.203:3000")
+// 		// Add other CORS headers as needed
+// 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+// 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+// 		// Continue handling the request
+// 		next.ServeHTTP(w, r)
+// 	})
+// }
